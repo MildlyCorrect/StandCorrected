@@ -112,48 +112,92 @@ surrender_strategy = {
 # === Logic ===
 
 def draw_card():
-    return random.choice([2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11])
+    return random.choice(['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'])
+
+
+def card_value(card):
+    if card in ['T', 'J', 'Q', 'K']:
+        return 10
+    elif card == 'A':
+        return 11
+    else:
+        return int(card)
+
 
 def get_hand_type(c1, c2):
-    if c1 == c2:
+    v1 = card_value(c1)
+    v2 = card_value(c2)
+
+    if v1 == v2:
         return "pair"
-    elif 11 in (c1, c2) and c1 + c2 <= 21:
+    elif 11 in (v1, v2) and v1 + v2 <= 21:
         return "soft"
     else:
         return "hard"
 
+
 def get_correct_move(c1, c2, dealer_upcard):
+    v1 = card_value(c1)
+    v2 = card_value(c2)
+    dealer_val = card_value(dealer_upcard)
+
     hand_type = get_hand_type(c1, c2)
-    total = c1 + c2
+    total = v1 + v2
 
     if hand_type == "pair":
-        return pair_strategy.get((c1, dealer_upcard), 'H')
+        return pair_strategy.get((v1, dealer_val), 'H')
     elif hand_type == "soft":
-        return soft_strategy.get((total, dealer_upcard), 'H')
+        return soft_strategy.get((total, dealer_val), 'H')
     else:
-        if (total, dealer_upcard) in surrender_strategy:
+        if (total, dealer_val) in surrender_strategy:
             return 'R'
-        return hard_strategy.get((total, dealer_upcard), 'H')
+        return hard_strategy.get((total, dealer_val), 'H')
 
-def play_hand():
+
+def play_hand(practice_mode):
     global total_hands, correct_moves, incorrect_moves
 
     dealer_upcard = draw_card()
-    player_card1 = draw_card()
-    player_card2 = draw_card()
 
-    display1 = display_card(player_card1)
-    display2 = display_card(player_card2)
-    hand_display = display1 + display2
+    # Draw a player hand that matches the selected practice mode
+    while True:
+       c1 = draw_card()
+       c2 = draw_card()
+       hand_type = get_hand_type(c1, c2)
 
-    print(f"\nDealer shows: {display_card(dealer_upcard)}")
+
+       if practice_mode == 'hard' and hand_type == 'hard':
+            break
+       elif practice_mode == 'soft' and hand_type == 'soft':
+            break
+       elif practice_mode == 'pairs' and hand_type == 'pair':
+            break
+       elif practice_mode == 'full':
+            break
+
+
+
+    display1 = display_card(c1)
+    display2 = display_card(c2)
+    hand_display = f"{display1} {display2}"
+
+    print(f"\nDealer shows: {dealer_upcard}")
     print(f"Your hand: {hand_display}")
 
-    move = input("Your move (H/S/D/P/R/Q): ").upper().strip()
+    print("\nWhat would you like to do?")
+    print("  H - Hit")
+    print("  S - Stand")
+    print("  D - Double")
+    print("  P - Split")
+    print("  R - Surrender")
+    print("  Q - Quit")
+
+    move = input("Enter your move: ").upper().strip()
+
     if move == 'Q':
         return 'QUIT'
 
-    correct_move = get_correct_move(player_card1, player_card2, dealer_upcard)
+    correct_move = get_correct_move(c1, c2, dealer_upcard)
 
     total_hands += 1
     if move == correct_move:
@@ -168,12 +212,30 @@ def play_hand():
 if __name__ == "__main__":
     show_banner()
 
+    clear_screen()
+    print("Select practice mode:")
+    print("1 - Full Mix")
+    print("2 - Hard Hands Only")
+    print("3 - Soft Hands Only")
+    print("4 - Pairs Only")
+    mode_choice = input("Enter choice (1–4): ").strip()
+
+    if mode_choice == '2':
+        practice_mode = 'hard'
+    elif mode_choice == '3':
+        practice_mode = 'soft'
+    elif mode_choice == '4':
+        practice_mode = 'pairs'
+    else:
+        practice_mode = 'full'
+
+
     total_hands = 0
     correct_moves = 0
     incorrect_moves = 0
 
     while True:
-        result = play_hand()
+        result = play_hand(practice_mode)
         if result == 'QUIT':
             break
 
